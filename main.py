@@ -1,20 +1,25 @@
 from fastapi import FastAPI
 
-from app.database.database import Base
-from app.database.database import engine
-
-from app.models.log_model import Log
-
-from app.routes.log_routes import router as log_router
+from app.database.database import Base, engine
 
 
+from app.models.user import User
+from app.routes.user import router as user_router
+
+
+
+#Crea las tablas en PostgreSQL si no existen
 Base.metadata.create_all(bind=engine)
 
 
-app = FastAPI()
+#Instancia principal de FastAPI
+app = FastAPI(
+        title="NEXO",
+        description="API de Autenticacion y Sesiones de Usuario",
+)
 
-
-app.include_router(log_router)
+#Se registran las rutas que importe arriba, en modulos separados
+app.include_router(user_router)
 
 
 @app.get("/")
