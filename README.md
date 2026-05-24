@@ -5,16 +5,16 @@
 ### Grupo 0
 
 ```text
-Aaron Reveco   - 10208
+Aaron Reveco      - 10208
 Buttini Cristobal - 9976
-Ricardo Sosa   - 10255
+Ricardo Sosa      - 10255
 ```
 
 ---
 
 ## Descripción
 
-API REST desarrollada en Python con FastAPI que permite gestionar la autenticación y sesiones de usuarios. Centraliza el registro, login, validación de tokens y cierre de sesión, pudiendo ser consumida por cualquier sistema externo que necesite autenticar usuarios.
+API desarrollada en Python con FastAPI que permite gestionar la autenticación y sesiones de usuarios. Centraliza el registro, login, validación de tokens y cierre de sesión, pudiendo ser consumida por cualquier sistema externo que necesite autenticar usuarios.
 
 ---
 
@@ -30,11 +30,10 @@ API REST desarrollada en Python con FastAPI que permite gestionar la autenticaci
 
 ### Bases de datos
 
-- PostgreSQL — usuarios, roles y permisos (datos estructurados y críticos)
+- PostgreSQL — usuarios (datos estructurados y críticos)
 - MongoDB — sesiones activas y metadata variable por dispositivo
 
-### Infraestructura
-
+---
 
 ## Arquitectura del proyecto
 
@@ -46,8 +45,6 @@ Cliente (cualquier sistema externo)
  ┌──────────────────────────┐
  │  PostgreSQL              │
  │  · Usuarios              │
- │  · Roles                 │
- │  · Permisos              │
  ├──────────────────────────┤
  │  MongoDB                 │
  │  · Sesiones activas      │
@@ -59,9 +56,9 @@ Cliente (cualquier sistema externo)
 
 ## Objetivo del sistema
 
-- Registrar y gestionar usuarios con roles.
+- Registrar y gestionar usuarios.
 - Autenticar credenciales y emitir tokens JWT.
-- Almacenar sesiones con metadata variable por dispositivo (Mongo DB).
+- Almacenar sesiones con metadata variable por dispositivo en MongoDB.
 - Validar tokens activos y cerrar sesiones.
 - Auditar accesos e intentos de autenticación.
 - Separar datos estructurados (Postgres) de datos flexibles (MongoDB).
@@ -70,15 +67,15 @@ Cliente (cualquier sistema externo)
 
 ## Endpoints principales
 
-| Método | Endpoint             | Descripción                              |
-| ------ | -------------------- | ---------------------------------------- |
-| POST   | /auth/register       | Registrar un nuevo usuario               |
-| POST   | /auth/login          | Autenticar usuario y obtener token JWT   |
-| GET    | /auth/validate       | Validar si un token sigue activo         |
-| POST   | /auth/logout         | Cerrar sesión e invalidar token          |
-| GET    | /users               | Listar usuarios (requiere rol admin)     |
-| GET    | /users/{id}          | Obtener usuario por ID                   |
-| GET    | /sessions            | Listar sesiones activas de un usuario    |
+| Método | Endpoint        | Descripción                            |
+| ------ | --------------- | -------------------------------------- |
+| POST   | /users/         | Registrar un nuevo usuario             |
+| GET    | /users/{id}     | Obtener usuario por ID                 |
+| PUT    | /users/{id}     | Modificar datos de un usuario          |
+| DELETE | /users/{id}     | Eliminar un usuario                    |
+| POST   | /auth/login     | Autenticar usuario y obtener token JWT |
+| GET    | /auth/validate  | Validar si un token sigue activo       |
+| POST   | /auth/logout    | Cerrar sesión e invalidar token        |
 
 ---
 
@@ -86,13 +83,11 @@ Cliente (cualquier sistema externo)
 
 PostgreSQL almacena los datos estructurados y críticos del sistema:
 
-- **users** — id, email, password hasheado, created_at
-- **roles** — id, nombre (admin, user, moderator)
-- **user_roles** — relación entre usuarios y roles
+- **users** — id, name, surname, username, email, password hasheado, created_at
 
 ### Justificación
 
-Los datos de usuarios y roles tienen estructura fija y requieren consistencia transaccional. Por ejemplo, crear un usuario y asignarle un rol debe ocurrir en una sola transacción o no ocurrir.
+Los datos de usuarios tienen estructura fija y requieren consistencia transaccional.
 
 ---
 
@@ -124,24 +119,11 @@ MongoDB almacena las sesiones activas con su metadata variable:
 
 ### Justificación
 
-Cada sesión puede tener campos completamente distintos según el origen (web, mobile, API key, Smart TV). MongoDB permite almacenar esta estructura variable dado por el JSON
+Cada sesión puede tener campos completamente distintos según el origen (web, mobile, API key, Smart TV). MongoDB permite almacenar esta estructura variable sin necesidad de columnas opcionales en una tabla relacional.
 
 ---
 
 ## Características implementadas
-
-### Índices
-
-- PostgreSQL: índice sobre `email` en la tabla `users` para búsquedas rápidas al login.
-- MongoDB: índice sobre `user_id` y `expires_at` para consultas de sesiones activas.
-
-### Particionado
-
-- La tabla de sesiones históricas en PostgreSQL se particiona por rango de fechas (`created_at`), permitiendo archivar sesiones antiguas sin degradar el rendimiento.
-
-### Transacciones
-
-- El registro de un usuario y la asignación de su rol se ejecutan en una única transacción en PostgreSQL.
 
 ### Seguridad
 
@@ -154,7 +136,7 @@ Cada sesión puede tener campos completamente distintos según el origen (web, m
 ### ORM y Sin ORM
 
 - SQLAlchemy como ORM para PostgreSQL.
-- PyMongo directo (sin ORM) para MongoDB, justificando el uso de cada enfoque.
+- PyMongo directo (sin ORM) para MongoDB, justificando el uso de cada enfoque según la naturaleza de los datos.
 
 ### Backup & Restore
 
@@ -175,14 +157,14 @@ scripts/restore.sh
 ```text
 app/
 │
-├── config/          # Configuración general 
+├── config/          # Configuración general
 ├── database/        # Conexión a PostgreSQL y MongoDB
 ├── models/          # Modelos ORM (SQLAlchemy)
 ├── schemas/         # Validación de datos (Pydantic)
 ├── repositories/    # Acceso y persistencia de datos
 ├── services/        # Lógica de negocio
 ├── routes/          # Endpoints de la API
-└── utils/           # JWT, hasheo, helpers
+└── utils/           # JWT, hasheo de contraseña
 
 scripts/
 ├── backup.sh        # Backup de PostgreSQL y MongoDB
@@ -191,7 +173,6 @@ scripts/
 main.py              # Punto de entrada
 requirements.txt
 .env.example
-
 ```
 
 ---
@@ -202,6 +183,7 @@ requirements.txt
 
 ```bash
 git clone <repository_url>
+cd nexo
 ```
 
 ### Crear entorno virtual
@@ -215,6 +197,11 @@ python -m venv venv
 **Windows:**
 ```bash
 venv\Scripts\activate
+```
+
+**Linux / Mac:**
+```bash
+source venv/bin/activate
 ```
 
 ### Instalar dependencias
@@ -235,7 +222,6 @@ cp .env.example .env
 ## Ejecutar aplicación
 
 ```bash
-uvicorn app.main:app --reload
 fastapi dev
 ```
 

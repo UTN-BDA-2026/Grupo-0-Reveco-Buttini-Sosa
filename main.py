@@ -5,6 +5,8 @@ from app.database.database import Base, engine
 
 from app.models.user import User
 from app.routes.user import router as user_router
+from app.routes.auth import router as auth_router
+
 
 
 
@@ -20,6 +22,7 @@ app = FastAPI(
 
 #Se registran las rutas que importe arriba, en modulos separados
 app.include_router(user_router)
+app.include_router(auth_router)
 
 
 @app.get("/")
