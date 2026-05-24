@@ -308,7 +308,7 @@ Las tablas de PostgreSQL se crean automáticamente al levantar la app.
 python scripts/seed.py
 ```
 
-Esto crea 200 usuarios de prueba. Todos tienen la misma contraseña: `Password123`
+Esto crea 200 usuarios de prueba. Todos tienen la misma contraseña: `Contraseña123`
 
 ---
 
