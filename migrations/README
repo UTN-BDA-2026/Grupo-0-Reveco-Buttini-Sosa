@@ -1,0 +1,26 @@
+# Migraciones — NEXO
+
+Las migraciones se gestionan con Alembic y se aplican en orden cronológico.
+
+## Migración actual
+
+**99dc015106a1 — partition students by anio_ingreso**
+
+Particiona la tabla `students` por `anio_ingreso`. Cada año de ingreso
+tiene su propia partición en PostgreSQL:
+
+    students_2018, students_2019, students_2020, students_2021,
+    students_2022, students_2023, students_2024, students_2025
+
+Esto optimiza las consultas por cohorte de alumnos.
+
+## Comandos
+
+Aplicar todas las migraciones pendientes:
+    alembic upgrade head
+
+Revertir la última migración:
+    alembic downgrade -1
+
+Ver el estado actual:
+    alembic current
