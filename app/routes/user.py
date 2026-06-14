@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.repositories.user import UserRepository
+from app.repositories.role import RoleRepository
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 
@@ -10,7 +11,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
-    return UserService(UserRepository(db))
+    # Ahora UserService necesita RoleRepository para validar el role_id
+    return UserService(UserRepository(db), RoleRepository(db))
 
 
 # Crear usuario
