@@ -18,7 +18,8 @@ class UserRepository:
                 surname=user_create.surname,
                 username=user_create.username,
                 email=user_create.email,
-                password=hash_password(user_create.password),  # Se hashea antes de guardar
+                password=hash_password(user_create.password),
+                role_id=user_create.role_id,  # Se agrega el role_id
             )
             self.db.add(user)
             self.db.commit()        # COMMIT — confirma la transacción
