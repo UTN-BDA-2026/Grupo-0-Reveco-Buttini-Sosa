@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.database import Base, engine
 
@@ -26,6 +27,14 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
         title="NEXO",
         description="API de Autenticacion y Sesiones de Usuario",
+)
+
+#CORS - Permite que el frontend pueda comunicarse con la API  sin restricciones del navegador
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 #Se registran las rutas que importe arriba, en modulos separados
