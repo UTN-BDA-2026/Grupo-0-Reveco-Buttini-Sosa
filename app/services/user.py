@@ -1,15 +1,21 @@
 from fastapi import HTTPException
 
 from app.repositories.user import UserRepository
+from app.repositories.role import RoleRepository
 from app.schemas.user import UserCreate, UserUpdate
 
 
 class UserService:
 
-    def __init__(self, user_repository: UserRepository):
+    def __init__(self, user_repository: UserRepository, role_repository: RoleRepository):
         self.user_repository = user_repository
+        self.role_repository = role_repository
 
     def create_user(self, user_create: UserCreate):
+        # Verifica que el rol exista
+        if not self.role_repository.get_by_id(user_create.role_id):
+            raise HTTPException(status_code=404, detail="Rol no encontrado")
+
         # Verifica que el email no esté registrado
         if self.user_repository.get_by_email(user_create.email):
             raise HTTPException(status_code=400, detail="Email ya registrado")
