@@ -294,6 +294,23 @@ python scripts/seed.py
 
 Crea 3 roles y 200 usuarios. Contraseña de todos: `Contraseña123`
 
+### 9. Backup & Restore
+
+Para hacer un backup del estado actual de la base de datos:
+
+```bash
+python scripts/backup.py
+```
+La primera vez que corrés el backup la carpeta backups/ se crea automáticamente
+
+Para restaurar desde el backup más reciente:
+
+```bash
+python scripts/restore.py
+```
+
+Los backups se guardan en la carpeta `backups/` con timestamp y cubren todas las tablas de PostgreSQL.
+
 ---
 
 ## Frontend demostrativo
