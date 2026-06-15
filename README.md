@@ -14,28 +14,19 @@ Ricardo Sosa      - 10255
 
 ## Descripción
 
-API desarrollada en Python con FastAPI que permite gestionar la autenticación y sesiones de usuarios. Centraliza el registro, login, validación de tokens y cierre de sesión, pudiendo ser consumida por cualquier sistema externo que necesite autenticar usuarios.
+NEXO es una API REST desarrollada en Python con FastAPI que actúa como microservicio de autenticación y gestión de usuarios para sistemas universitarios. Centraliza el registro, login, validación de tokens y cierre de sesión, pudiendo ser consumida por cualquier sistema externo — como un sistema de gestión académica tipo Sysacad.
 
 ---
 
 ## Tecnologías utilizadas
 
-### Backend
+**Backend:** Python, FastAPI, SQLAlchemy (ORM), Alembic (migraciones), Passlib + bcrypt, PyJWT
 
-- Python
-- FastAPI
-- SQLAlchemy (ORM)
-- Passlib + bcrypt (hasheo de contraseñas)
-- PyJWT (generación y validación de tokens)
-
-### Bases de datos
-
-- PostgreSQL — usuarios (datos estructurados y críticos)
-- MongoDB — sesiones activas (JSON variables)
+**Bases de datos:** PostgreSQL (datos estructurados) · MongoDB (sesiones JSON variables)
 
 ---
 
-## Arquitectura del proyecto
+## Arquitectura
 
 ```text
 Cliente (cualquier sistema externo)
@@ -44,11 +35,14 @@ Cliente (cualquier sistema externo)
             ↓
  ┌──────────────────────────┐
  │  PostgreSQL              │
+ │  · Roles                 │
  │  · Usuarios              │
+ │  · Alumnos               │
+ │  · Docentes              │
+ │  · Administrativos       │
  ├──────────────────────────┤
  │  MongoDB                 │
  │  · Sesiones activas      │
- │  · Metadata de sesiones  │
  └──────────────────────────┘
 ```
 
@@ -56,36 +50,82 @@ Cliente (cualquier sistema externo)
 
 ## Objetivo del sistema
 
-- Registrar y gestionar usuarios.
-- Autenticar credenciales y emitir tokens JWT.
-- Almacenar sesiones con metadata variable por dispositivo en MongoDB.
+- Registrar y gestionar usuarios con roles (alumno, docente, administrativo).
+- Autenticar credenciales y emitir tokens JWT con expiración de 1 hora.
+- Almacenar sesiones con metadata variable en MongoDB.
 - Validar tokens activos y cerrar sesiones.
-- Auditar accesos e intentos de autenticación.
-- Separar datos estructurados (Postgres) de datos flexibles (MongoDB).
+- Auditar accesos exitosos y fallidos.
 
 ---
 
 ## Endpoints principales
 
-### Usuarios
+<details>
+<summary>Usuarios</summary>
 
-| Método   | Endpoint       | Descripción                              | Body requerido                                              |
-| -------- | -------------- | ---------------------------------------- | ----------------------------------------------------------- |
-| `POST`   | `/users/`      | Registrar un nuevo usuario               | `name`, `surname`, `username`, `email`, `password`          |
-| `GET`    | `/users/{id}`  | Obtener usuario por ID                   | —                                                           |
-| `PUT`    | `/users/{id}`  | Modificar datos de un usuario            | Cualquier campo: `name`, `surname`, `username`, `email`, `password` |
-| `DELETE` | `/users/{id}`  | Eliminar un usuario                      | —                                                           |
+| Método   | Endpoint       | Descripción                   | Body requerido                                                      |
+| -------- | -------------- | ----------------------------- | ------------------------------------------------------------------- |
+| `POST`   | `/users/`      | Registrar un nuevo usuario    | `name`, `surname`, `username`, `email`, `password`, `role_id`       |
+| `GET`    | `/users/{id}`  | Obtener usuario por ID        | —                                                                   |
+| `PUT`    | `/users/{id}`  | Modificar datos de un usuario | Cualquier campo: `name`, `surname`, `username`, `email`, `password` |
+| `DELETE` | `/users/{id}`  | Eliminar un usuario           | —                                                                   |
 
-### Autenticación
+</details>
 
-| Método | Endpoint         | Descripción                              | Body requerido             |
-| ------ | ---------------- | ---------------------------------------- | -------------------------- |
-| `POST` | `/auth/login`    | Autenticar usuario y obtener token JWT   | `email`, `password`        |
-| `GET`  | `/auth/validate` | Validar si un token sigue activo         | `token` (query param)      |
-| `POST` | `/auth/logout`   | Cerrar sesión e invalidar token          | `token` (query param)      |
+<details>
+<summary>Roles</summary>
 
-### Ejemplo de respuesta exitosa — Login
+| Método | Endpoint      | Descripción            | Body requerido        |
+| ------ | ------------- | ---------------------- | --------------------- |
+| `POST` | `/roles/`     | Crear un rol           | `name`, `description` |
+| `GET`  | `/roles/`     | Listar todos los roles | —                     |
+| `GET`  | `/roles/{id}` | Obtener rol por ID     | —                     |
 
+</details>
+
+<details>
+<summary>Alumnos</summary>
+
+| Método | Endpoint              | Descripción                 | Body requerido                      |
+| ------ | --------------------- | --------------------------- | ----------------------------------- |
+| `POST` | `/students/{user_id}` | Crear perfil de alumno      | `legajo`, `carrera`, `anio_ingreso` |
+| `GET`  | `/students/{user_id}` | Obtener perfil de alumno    | —                                   |
+| `PUT`  | `/students/{user_id}` | Actualizar perfil de alumno | `carrera`, `anio_ingreso`           |
+
+</details>
+
+<details>
+<summary>Docentes</summary>
+
+| Método | Endpoint              | Descripción                  | Body requerido                     |
+| ------ | --------------------- | ---------------------------- | ---------------------------------- |
+| `POST` | `/teachers/{user_id}` | Crear perfil de docente      | `legajo`, `departamento`, `titulo` |
+| `GET`  | `/teachers/{user_id}` | Obtener perfil de docente    | —                                  |
+| `PUT`  | `/teachers/{user_id}` | Actualizar perfil de docente | `departamento`, `titulo`           |
+
+</details>
+
+<details>
+<summary>Administrativos</summary>
+
+| Método | Endpoint           | Descripción                      | Body requerido          |
+| ------ | ------------------ | -------------------------------- | ----------------------- |
+| `POST` | `/staff/{user_id}` | Crear perfil de administrativo   | `legajo`, `sector`, `cargo` |
+| `GET`  | `/staff/{user_id}` | Obtener perfil de administrativo | —                       |
+| `PUT`  | `/staff/{user_id}` | Actualizar perfil administrativo | `sector`, `cargo`       |
+
+</details>
+
+<details>
+<summary>Autenticación</summary>
+
+| Método | Endpoint         | Descripción                            | Body requerido        |
+| ------ | ---------------- | -------------------------------------- | --------------------- |
+| `POST` | `/auth/login`    | Autenticar usuario y obtener token JWT | `email`, `password`   |
+| `GET`  | `/auth/validate` | Validar si un token sigue activo       | `token` (query param) |
+| `POST` | `/auth/logout`   | Cerrar sesión e invalidar token        | `token` (query param) |
+
+**Respuesta exitosa — Login:**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -94,31 +134,25 @@ Cliente (cualquier sistema externo)
 }
 ```
 
-### Ejemplo de respuesta — Sesión fallida
-
-```json
-{
-  "detail": "Credenciales incorrectas"
-}
-```
+</details>
 
 ---
 
 ## Base de datos relacional — PostgreSQL
 
-PostgreSQL almacena los datos estructurados y críticos del sistema:
+- **roles** — id, name, description, created_at
+- **users** — id, name, surname, username, email, password hasheado, role_id, created_at
+- **students** — id, user_id, legajo, carrera, anio_ingreso *(tabla particionada)*
+- **teachers** — id, user_id, legajo, departamento, titulo
+- **staff** — id, user_id, legajo, sector, cargo
 
-- **users** — id, name, surname, username, email, password hasheado, created_at
-
-### Justificación
-
-Los datos de usuarios tienen estructura fija y requieren consistencia transaccional.
+Los datos tienen estructura fija y requieren consistencia transaccional. Crear un usuario y su perfil ocurre en una sola transacción o no ocurre.
 
 ---
 
 ## Base de datos NoSQL — MongoDB
 
-MongoDB almacena las sesiones activas con su metadata variable:
+MongoDB almacena las sesiones activas. La estructura varía según el resultado del login — un login exitoso incluye `token` y `expires_at`, uno fallido incluye `reason`. Esto justifica el uso de un documento flexible en lugar de columnas opcionales en una tabla relacional.
 
 ```json
 {
@@ -133,55 +167,36 @@ MongoDB almacena las sesiones activas con su metadata variable:
 }
 ```
 
-### Justificación
-
-Cada sesión puede tener campos completamente distintos según el resultado del login. Un login exitoso tiene `token` y `expires_at`, uno fallido tiene `reason`. MongoDB permite almacenar esta estructura variable sin necesidad de columnas opcionales en una tabla relacional.
-
 ---
 
 ## Características implementadas
 
-
 ### Índices
+- `users` — índices sobre `id` (primary key), `email` y `username`. Los índices sobre `email` y `username` optimizan la búsqueda al momento del login y el registro.
+- `students`, `teachers`, `staff` — índice sobre `legajo` en cada tabla para búsquedas rápidas por número de legajo.
 
-- Índice sobre `email` en la tabla `users` — optimiza la búsqueda al momento del login.
-- Índice sobre `username` en la tabla `users` — optimiza la validación de duplicados al registrarse.
+### Particionado
+La tabla `students` está particionada por `anio_ingreso` mediante Alembic. Se generaron 8 particiones para los años 2018-2025. Las consultas por cohorte solo leen la partición correspondiente.
 
 ### Transacciones
-
-- Todas las operaciones de escritura en PostgreSQL (`create`, `update`, `delete`) se ejecutan dentro de una transacción explícita con `commit` y `rollback`. Si algo falla a mitad del proceso, la base de datos vuelve al estado anterior.
+Todas las operaciones de escritura en PostgreSQL usan transacciones explícitas con `commit` y `rollback`. Si algo falla, la base de datos vuelve al estado anterior.
 
 ### Seguridad
-
-- Contraseñas hasheadas con bcrypt — nunca se almacena texto plano.
-- Tokens JWT con expiración de 1 hora.
-- Variables de entorno para credenciales y claves secretas.
-- Consultas parametrizadas via SQLAlchemy.
-- Validación de datos de entrada con Pydantic.
+Contraseñas hasheadas con bcrypt, tokens JWT con expiración, variables de entorno para credenciales, consultas parametrizadas via SQLAlchemy y validación de datos con Pydantic.
 
 ### ORM y Sin ORM
+SQLAlchemy como ORM para PostgreSQL. 
 
-- SQLAlchemy como ORM para PostgreSQL — mapea los modelos Python a tablas relacionales.
-- PyMongo directo (sin ORM) para MongoDB — acceso flexible a documentos JSON sin esquema fijo.
+PyMongo directo (sin ORM) para MongoDB.
 
 ### Backup & Restore
 
-Scripts incluidos para backup y restauración de PostgreSQL sin dependencias externas:
-
 ```bash
-# Hacer backup
-python scripts/backup.py
-
-# Restaurar desde el backup más reciente
-python scripts/restore.py
+python scripts/backup.py    # Hacer backup
+python scripts/restore.py   # Restaurar desde el backup más reciente
 ```
 
-Los backups se guardan en la carpeta `backups/` con timestamp:
-
-```
-backups/
-└── postgres_20260524_120000.json
-```
+Los backups se guardan en `backups/` con timestamp.
 
 ---
 
@@ -189,69 +204,40 @@ backups/
 
 ```text
 Nexo/
-│
 ├── app/
-│   ├── database/
-│   │   ├── database.py       # Conexión y sesión PostgreSQL
-│   │   └── mongo.py          # Conexión MongoDB
-│   │
-│   ├── models/
-│   │   └── user.py           # Modelo ORM de la tabla users
-│   │
-│   ├── schemas/
-│   │   └── user.py           # Validación de datos con Pydantic
-│   │
-│   ├── repositories/
-│   │   ├── user.py           # CRUD de usuarios en PostgreSQL
-│   │   └── session.py        # Gestión de sesiones en MongoDB
-│   │
-│   ├── services/
-│   │   ├── user.py           # Lógica de negocio de usuarios
-│   │   └── auth.py           # Lógica de autenticación
-│   │
-│   ├── routes/
-│   │   ├── user.py           # Endpoints de usuarios
-│   │   └── auth.py           # Endpoints de autenticación
-│   │
-│   └── utils/
-│       ├── hash.py           # Hasheo y verificación de contraseñas
-│       └── jwt.py            # Generación y validación de tokens JWT
-│
+│   ├── database/         # Conexión a PostgreSQL y MongoDB
+│   ├── models/           # Modelos ORM de cada entidad
+│   ├── schemas/          # Validación de datos con Pydantic
+│   ├── repositories/     # Acceso y persistencia de datos
+│   ├── services/         # Lógica de negocio
+│   ├── routes/           # Endpoints de la API
+│   └── utils/            # Hasheo y JWT
+├── migrations/
+│   ├── env.py            # Configuración de Alembic
+│   ├── versions/         # Archivos de migración
+│   └── README            # Documentación de migraciones
 ├── scripts/
-│   ├── seed.py               # Carga 200 usuarios de prueba
-│   ├── backup.py             # Backup de PostgreSQL
-│   └── restore.py            # Restauración de PostgreSQL
-│
-├── backups/                  # Archivos de backup (ignorado por git)
-├── main.py                   # Punto de entrada de la aplicación
-├── requirements.txt          # Dependencias del proyecto
-├── .env                      # Variables de entorno (ignorado por git)
-└── .env.example              # Plantilla de variables de entorno
+│   ├── seed.py           # Carga datos de prueba
+│   ├── backup.py         # Backup de PostgreSQL
+│   └── restore.py        # Restauración de PostgreSQL
+├── frontend/
+│   └── index.html        # Frontend demostrativo
+├── backups/              # Archivos de backup (ignorado por git)
+├── main.py
+├── alembic.ini
+├── requirements.txt
+├── .env.example
+└── .gitignore
 ```
 
 ---
 
 ## Requisitos previos
 
-Antes de correr la aplicación necesitás tener instalado en tu computadora:
-
-### 1. Python 3.11 o superior
-
-Versión 3.11 o superior. 
-
-### 2. PostgreSQL 15 o superior
-
-
-- Usuario (`postgres` por defecto) y la contraseña que configurás
-- El puerto por defecto es `5432`
-
-### 3. MongoDB 7 o superior
-- Version 8.3.2
-- MongoDB Compass 
-
-
-### 4. Git
-
+- **Python 3.11+** — marcá "Add Python to PATH" durante la instalación
+- **PostgreSQL 15+** — incluye pgAdmin; recordá el usuario y contraseña que configurás
+- **MongoDB 7+** — instalá también MongoDB Compass
+- **Git**
 
 ---
 
@@ -264,65 +250,67 @@ git clone <repository_url>
 cd Nexo
 ```
 
-### 2. Crear el entorno virtual
+### 2. Crear y activar el entorno virtual
 
 ```bash
 python -m venv venv
-```
-
-### 3. Activar el entorno virtual
-
-```bash
 venv\Scripts\activate
 ```
 
-### 4. Instalar dependencias
+### 3. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Configurar variables de entorno
+### 4. Configurar variables de entorno
 
-Copiá el archivo `.env.example`, renombralo a `.env` y completá cada variable con los datos de tu computadora.
+Copiá `.env.example`, renombralo a `.env` y completá con los datos de tu computadora.
 
-### 6. Crear la base de datos en PostgreSQL
+### 5. Crear las bases de datos
 
-Abrí pgAdmin o cualquier cliente de PostgreSQL y creá una base de datos llamada `Grupo-0`.
+- **PostgreSQL** — en pgAdmin creá una base de datos llamada `Grupo-0`
+- **MongoDB** — en MongoDB Compass creá una base de datos `Grupo-0` con colección `sessions`
 
-### 7. Crear la base de datos en MongoDB
-
-Abrí MongoDB Compass y creá una base de datos llamada `Grupo-0` con una colección llamada `sessions`.
-
-### 8. Levantar la aplicación
+### 6. Levantar la aplicación
 
 ```bash
 fastapi dev
 ```
 
-Las tablas de PostgreSQL se crean automáticamente al levantar la app.
+Las tablas de PostgreSQL se crean automáticamente.
 
-### 9. Cargar usuarios de prueba
+### 7. Aplicar migraciones
+
+```bash
+alembic upgrade head
+```
+
+### 8. Cargar datos de prueba
 
 ```bash
 python scripts/seed.py
 ```
 
-Esto crea 200 usuarios de prueba. Todos tienen la misma contraseña: `Contraseña123`
+Crea 3 roles y 200 usuarios. Contraseña de todos: `Contraseña123`
 
 ---
 
-## Ejecutar la aplicación
+## Frontend demostrativo
 
-```bash
-fastapi dev
-```
 
+Abrí `frontend/index.html` en el navegador con la API corriendo.
+
+- Registrar un nuevo usuario seleccionando el rol (alumno o docente)
+- Iniciar sesión con cualquier usuario de la base de datos
+- Ver en tiempo real los datos de la sesión — token JWT, estado, hora de inicio y expiración
+- Validar si el token sigue activo
+- Cerrar sesión
+
+> Este frontend es meramente explicativo. En una implementación real la información de sesión y tokens no sería visible al usuario final.
 ---
 
 ## Documentación automática (Swagger)
-
-FastAPI genera documentación interactiva automáticamente:
 
 ```
 http://localhost:8000/docs
